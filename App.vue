@@ -1,12 +1,14 @@
 <template lang="pug">
     div.shaft-container
         .floor-controls-wrapper
-            floorControls(v-for="floor in floors+1" :key="floor")
+            floorControls(v-for="floor in floors+1" :key="floor-1")
         .shaft-flexbox
             shaft(:shaftId="shaft" :totalFloors="floors" v-for="shaft in shafts")
 </template>
 
 <script>
+import { EventBus } from "./eventBus";
+
 import shaft from "./components/shaft.vue";
 import floorControls from "./components/floorControls.vue";
 
@@ -18,8 +20,15 @@ export default {
       floors: 11,
       shafts: ["A", "B", "C", "G"]
     };
+  },
+  beforeDestroy() {
+    EventBus.$off();
   }
 };
+
+EventBus.$on("button", e => {
+  console.log(e);
+});
 </script>
 <style>
 .shaft-container {

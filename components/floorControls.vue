@@ -1,17 +1,17 @@
-<template>
-  <div class="floor-controls">
-    <div class="floor-number">
-      <floorNumber :floorNo="floorNo"/>
-    </div>
-    <div class="floor-buttons" :id="floorNo">
-      <button class="up-button" @click="buttonClick">&uarr;</button>
-      <br>
-      <button class="down-button">&darr;</button>
-    </div>
-  </div>
+<template lang="pug">
+  .floor-controls
+    .floor-number
+      floor-number(:floorNo="floorNo")
+    .floor-buttons(:id="floorNo")
+      button.up(@click="buttonClick")
+        | &uarr;
+      br
+      button.down(@click="buttonClick")
+        | &darr;
 </template>
 
 <script>
+import { EventBus } from "../eventBus";
 import floorNumber from "./floorNumber.vue";
 export default {
   components: { floorNumber },
@@ -20,7 +20,9 @@ export default {
   },
   methods: {
     buttonClick(e) {
-      console.log(e.target.parentElement);
+      let floor = e.target.parentElement.id;
+      let dir = e.target.className;
+      EventBus.$emit("button", [floor, dir]);
     }
   }
 };

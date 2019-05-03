@@ -1,9 +1,7 @@
 <template lang="pug">
-// .shaft-header
-//   | {{shaftId}}
 .shaft( @click='clicked')
     // car(:carId='shaftId' :style='carStyle' :currentFloor="movingFloor"  :ref="`car-${shaftId}`")
-    .car.car-anim(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='carStyle')
+    .car.car-anim(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='[carStyle,carTransition]')
       | {{marginToFloor.toFixed(2)}}
 </template>
 <script>
@@ -24,6 +22,11 @@ export default {
     },
     carStyle() {
       return { "margin-top": this.floorToMargin };
+    },
+    carTransition() {
+      if (this.isMoving === true)
+        return { "transition-timing-function": "ease-out" };
+      else return { "transition-timing-function": "ease-in-out" };
     },
     movingFloor() {
       this.currentTime;
@@ -73,9 +76,9 @@ export default {
         this.$refs[
           `car-${this.shaftId}`
         ].style.transitionDuration = this.distanceToDuration(toFloor);
-        this.isMoving = true;
         this.currentFloor = toFloor;
         this.determineDirection(this.marginToFloor);
+        this.isMoving = true;
       }
       // js anim old attempt
       /*let mv = setInterval(() => {
@@ -147,6 +150,6 @@ export default {
 .car-anim {
   transition-property: margin-top;
   // transition-duration: 3s; /*variable!*/
-  transition-timing-function: ease-in-out;
+  // transition-timing-function: ease-in-out;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <p>{{floorNo-1}}</p>
+  <p>{{floorNo}}</p>
 </template>
 
 <script>
