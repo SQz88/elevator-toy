@@ -1,7 +1,7 @@
 <template lang="pug">
     div.shaft-container
         .floor-controls-wrapper
-            floorControls(v-for="floor in floors+1" :key="floor-1")
+            floorControls(v-for="floor in floors+1" :key="floor-1" :totalFloors="floors")
         .shaft-flexbox
             shaft(:shaftId="shaft" :totalFloors="floors" v-for="shaft in shafts")
 </template>
@@ -18,7 +18,7 @@ export default {
   data() {
     return {
       floors: 11,
-      shafts: ["A", "B", "C", "G"]
+      shafts: ["A", "B", "C", "D", "F", "G"]
     };
   },
   beforeDestroy() {
@@ -32,10 +32,10 @@ EventBus.$on("button", e => {
 </script>
 <style>
 .shaft-container {
-  width: 130px;
+  width: auto;
   margin: auto;
   display: grid;
-  justify-content: right;
+  justify-content: center;
   grid-template-columns: [controls] auto [shaft] auto [col-end];
   grid-template-rows: 1fr;
   grid-gap: 0.6em;

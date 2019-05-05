@@ -3,10 +3,10 @@
     .floor-number
       floor-number(:floorNo="floorNo")
     .floor-buttons(:id="floorNo")
-      button.up(@click="buttonClick")
+      button.up(@click="buttonClick" v-if="floorNo != totalFloors" ref="up")
         | &uarr;
       br
-      button.down(@click="buttonClick")
+      button.down(@click="buttonClick" v-if="floorNo != 0" ref="down")
         | &darr;
 </template>
 
@@ -15,6 +15,7 @@ import { EventBus } from "../eventBus";
 import floorNumber from "./floorNumber.vue";
 export default {
   components: { floorNumber },
+  props: ["totalFloors"],
   data() {
     return { floorNo: this.$vnode.key };
   },
@@ -22,7 +23,7 @@ export default {
     buttonClick(e) {
       let floor = e.target.parentElement.id;
       let dir = e.target.className;
-      EventBus.$emit("button", [floor, dir]);
+      EventBus.$emit("button", { floor, dir });
     }
   }
 };

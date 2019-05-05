@@ -1,31 +1,50 @@
 <template lang="pug">
 .shaft( @click='clicked')
-    .car.car-anim(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='[carStyle,carTransition]')
-      | {{marginToFloor.toFixed(2)}}
+    .car.car-anim(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='carStyle')
+      | {{shaftId}}{{dirArrow}} {{Math.ceil(marginToFloor)}}
 </template>
 <script>
 export default {
   props: ["shaftId", "totalFloors"],
+  data() {
+    return {
+      floorQueue: [],
+      currentFloor: 0,
+      isMoving: false,
+      movingDirection: 0,
+      carStyleObj: false,
+      openDoor: false,
+      currentTime: 0
+    };
+  },
   computed: {
     floorToMargin() {
       let total = 50 * (this.totalFloors - 1);
-      let current = 50 * (this.totalFloors - this.currentFloor);
-      return `${current}px`;
+      let target = 50 * (this.totalFloors - this.currentFloor);
+      return `${target}px`;
     },
     marginToFloor() {
-      let currentPx = this.movingFloor;
+      let currentPx = this.currentMargin;
       let currentFl = this.totalFloors - currentPx / 50;
       return currentFl;
     },
     carStyle() {
-      return { "margin-top": this.floorToMargin };
+      let styleObj = { "margin-top": this.floorToMargin };
+      if (this.isMoving === true) {
+        Object.assign(styleObj, {
+          "border-color": "darkred",
+          "transition-timing-function": "ease-out"
+        });
+      }
+      if (this.openDoor) {
+        Object.assign(styleObj, {
+          "border-color": "yellow",
+          "background-color": "red"
+        });
+      }
+      return styleObj;
     },
-    carTransition() {
-      if (this.isMoving === true)
-        return { "transition-timing-function": "ease-out" };
-      else return { "transition-timing-function": "ease-in-out" };
-    },
-    movingFloor() {
+    currentMargin() {
       this.currentTime;
       if (this._isMounted) {
         // console.log(this.carStyleObj.marginTop);
@@ -33,43 +52,52 @@ export default {
       } else {
         return "550";
       }
+    },
+    dirArrow() {
+      if (this.movingDirection != 0) {
+        return this.movingDirection == 1 ? "↑" : "↓";
+      } else return "";
     }
   },
   watch: {
     isMoving(newval, old) {
+      var self = this;
       if (newval === true && old === false) {
-        var self = this;
         var interv = setInterval(function() {
           // console.log(self.shaftId);
           self.currentTime = Date.now();
-          if (self.movingFloor == self.floorToMargin.slice(0, -2)) {
+          if (self.currentMargin == self.floorToMargin.slice(0, -2)) {
             self.isMoving = false;
             self.movingDirection = 0;
+            self.floorQueue.shift();
+            self.openDoor = true;
             clearInterval(interv);
           }
         }, 100);
+      } else {
+        setTimeout(() => {
+          self.openDoor = false;
+          self.moveCar();
+        }, 2500);
       }
     }
-  },
-  data() {
-    return {
-      goToQueue: [],
-      currentFloor: 0,
-      isMoving: false,
-      movingDirection: 0,
-      carStyleObj: false,
-      currentTime: 0
-    };
   },
   methods: {
     clicked() {
       // console.log(this.carStyleObj.marginTop);
-      this.moveCar(Math.floor(Math.random() * (this.totalFloors + 1)));
-      console.log(`Shaft ${this.shaftId} going to ${this.currentFloor}`);
+      this.enqueueFloor(Math.floor(Math.random() * (this.totalFloors + 1)));
     },
-    moveCar(toFloor) {
-      //check whether the floor is not out of bounds TO DO
+    enqueueFloor(goto) {
+      this.floorQueue.push(goto);
+      console.log(`Shaft ${this.shaftId} # ${goto} floor added to the queue`);
+      if (this.floorQueue.length == 1) {
+        this.moveCar();
+      }
+    },
+    moveCar() {
+      let toFloor = this.floorQueue[0];
       if (toFloor <= this.totalFloors) {
+        console.log(`Shaft ${this.shaftId} going to ${toFloor}`);
         //css anim attempt
         this.$refs[
           `car-${this.shaftId}`
@@ -108,11 +136,6 @@ export default {
   },
   mounted() {
     this.carStyleObj = getComputedStyle(this.$refs[`car-${this.shaftId}`]);
-    // this.$set(
-    //   this.carStyleObj,
-    //   this.shaftId,
-    //   getComputedStyle(this.$refs[`car-${this.shaftId}`])
-    // );
   }
 };
 </script>
@@ -141,13 +164,12 @@ export default {
   font-weight: 1000;
   height: 49px;
   width: 100%;
-  border: 1px solid gainsboro;
+  border: 1px solid limegreen;
   border-radius: 10px;
   line-height: 38px;
 }
 .car-anim {
   transition-property: margin-top;
-  // transition-duration: 3s; /*variable!*/
-  // transition-timing-function: ease-in-out;
+  transition-timing-function: ease-in-out;
 }
 </style>
