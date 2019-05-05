@@ -23,8 +23,20 @@ export default {
     buttonClick(e) {
       let floor = e.target.parentElement.id;
       let dir = e.target.className;
+      this.$refs[dir].disabled = true;
       EventBus.$emit("button", { floor, dir });
     }
+  },
+  mounted() {
+    EventBus.$on("floor", payload => {
+      let { floor, dir } = payload;
+      if (floor == this.floorNo) {
+        this.$refs[dir].disabled = false;
+      }
+    });
+  },
+  beforeDestroy() {
+    EventBus.$off();
   }
 };
 </script>
@@ -44,5 +56,8 @@ export default {
   padding: 0.2em !important;
   font: inherit;
   width: 100%;
+}
+.floor-controls button:disabled {
+  background-color: brown;
 }
 </style>

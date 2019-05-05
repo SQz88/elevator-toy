@@ -4,6 +4,8 @@
       | {{shaftId}}{{dirArrow}} {{Math.ceil(marginToFloor)}}
 </template>
 <script>
+import { EventBus } from "../eventBus";
+
 export default {
   props: ["shaftId", "totalFloors"],
   data() {
@@ -68,8 +70,11 @@ export default {
           self.currentTime = Date.now();
           if (self.currentMargin == self.floorToMargin.slice(0, -2)) {
             self.isMoving = false;
-            self.movingDirection = 0;
-            self.floorQueue.shift();
+            EventBus.$emit("floor", {
+              floor: self.currentFloor,
+              dir: self.movingDirection == 1 ? "up" : "down"
+            });
+            // self.movingDirection = 0;
             self.openDoor = true;
             clearInterval(interv);
           }
@@ -77,8 +82,17 @@ export default {
       } else {
         setTimeout(() => {
           self.openDoor = false;
-          self.moveCar();
-        }, 2500);
+          self.floorQueue.shift();
+          if (self.floorQueue.length > 0) {
+            self.moveCar();
+          } else {
+            EventBus.$emit("floor", {
+              floor: self.currentFloor,
+              dir: self.movingDirection == 1 ? "down" : "up"
+            });
+            self.movingDirection = 0;
+          }
+        }, 3500);
       }
     }
   },
@@ -154,6 +168,7 @@ export default {
   );
   display: flex;
   flex-direction: column;
+  margin-right: 2px;
 }
 .car {
   background-color: gray;
