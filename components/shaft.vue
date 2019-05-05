@@ -49,10 +49,9 @@ export default {
     currentMargin() {
       this.currentTime;
       if (this._isMounted) {
-        // console.log(this.carStyleObj.marginTop);
         return this.carStyleObj.marginTop.slice(0, -2);
       } else {
-        return "550";
+        return this.totalFloors * 50;
       }
     },
     dirArrow() {
@@ -70,12 +69,11 @@ export default {
           self.currentTime = Date.now();
           if (self.currentMargin == self.floorToMargin.slice(0, -2)) {
             self.isMoving = false;
+            self.openDoor = true;
             EventBus.$emit("floor", {
               floor: self.currentFloor,
               dir: self.movingDirection == 1 ? "up" : "down"
             });
-            // self.movingDirection = 0;
-            self.openDoor = true;
             clearInterval(interv);
           }
         }, 100);

@@ -12,6 +12,8 @@ import { EventBus } from "./eventBus";
 import shaft from "./components/shaft.vue";
 import floorControls from "./components/floorControls.vue";
 
+const FastPriorityQueue = require("fastpriorityqueue");
+
 export default {
   components: { shaft, floorControls },
   name: "elevator",
@@ -23,6 +25,10 @@ export default {
   },
   beforeDestroy() {
     EventBus.$off();
+  },
+  created() {
+    const upQueue = new FastPriorityQueue();
+    const downQueue = new FastPriorityQueue();
   }
 };
 

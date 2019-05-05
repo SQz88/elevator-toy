@@ -30,7 +30,7 @@ export default {
   mounted() {
     EventBus.$on("floor", payload => {
       let { floor, dir } = payload;
-      if (floor == this.floorNo) {
+      if (floor == this.floorNo && this.$refs.hasOwnProperty(dir)) {
         this.$refs[dir].disabled = false;
       }
     });
