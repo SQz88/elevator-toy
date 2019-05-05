@@ -1,13 +1,10 @@
 <template lang="pug">
 .shaft( @click='clicked')
-    // car(:carId='shaftId' :style='carStyle' :currentFloor="movingFloor"  :ref="`car-${shaftId}`")
     .car.car-anim(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='[carStyle,carTransition]')
       | {{marginToFloor.toFixed(2)}}
 </template>
 <script>
-// import car from "./car.vue";
 export default {
-  // components: { car },
   props: ["shaftId", "totalFloors"],
   computed: {
     floorToMargin() {
@@ -56,6 +53,7 @@ export default {
   },
   data() {
     return {
+      goToQueue: [],
       currentFloor: 0,
       isMoving: false,
       movingDirection: 0,
@@ -67,7 +65,7 @@ export default {
     clicked() {
       // console.log(this.carStyleObj.marginTop);
       this.moveCar(Math.floor(Math.random() * (this.totalFloors + 1)));
-      console.log(`going to ${this.currentFloor}`);
+      console.log(`Shaft ${this.shaftId} going to ${this.currentFloor}`);
     },
     moveCar(toFloor) {
       //check whether the floor is not out of bounds TO DO
