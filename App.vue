@@ -12,7 +12,7 @@ import { EventBus } from "./eventBus";
 import shaft from "./components/shaft.vue";
 import floorControls from "./components/floorControls.vue";
 
-const FastPriorityQueue = require("fastpriorityqueue");
+const fpQueue = require("fastpriorityqueue");
 
 export default {
   components: { shaft, floorControls },
@@ -20,21 +20,34 @@ export default {
   data() {
     return {
       floors: 11,
-      shafts: ["A", "B", "C", "D", "F", "G"]
+      shafts: ["A", "B", "C", "D"], //, "F", "G"],
+      upQueue: new fpQueue(),
+      downQueue: new fpQueue((a, b) => {
+        return a > b;
+      })
     };
   },
+  methods: {},
   beforeDestroy() {
     EventBus.$off();
   },
   created() {
-    const upQueue = new FastPriorityQueue();
-    const downQueue = new FastPriorityQueue();
+    EventBus.$on("button", ({ floor, dir }) => {
+      if (dir == "up") {
+        this.upQueue.add(floor);
+      } else if (dir == "down") {
+        this.downQueue.add(floor);
+      }
+    });
+  },
+  mounted() {
+    setInterval(() => {
+      while (!this.upQueue.isEmpty()) {
+        console.log(this.upQueue.poll());
+      }
+    }, 800);
   }
 };
-
-EventBus.$on("button", e => {
-  console.log(e);
-});
 </script>
 <style>
 .shaft-container {

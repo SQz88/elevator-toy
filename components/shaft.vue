@@ -1,6 +1,6 @@
 <template lang="pug">
-.shaft( @click='clicked')
-    .car.car-anim(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='carStyle')
+.shaft
+    .car(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='carStyle')
       | {{shaftId}}{{dirArrow}} {{Math.ceil(marginToFloor)}}
 </template>
 <script>
@@ -34,8 +34,8 @@ export default {
       let styleObj = { "margin-top": this.floorToMargin };
       if (this.isMoving === true) {
         Object.assign(styleObj, {
-          "border-color": "darkred",
-          "transition-timing-function": "ease-out"
+          "border-color": "darkred"
+          // "transition-timing-function": "ease-out"
         });
       }
       if (this.openDoor) {
@@ -96,7 +96,6 @@ export default {
   },
   methods: {
     clicked() {
-      // console.log(this.carStyleObj.marginTop);
       this.enqueueFloor(Math.floor(Math.random() * (this.totalFloors + 1)));
     },
     enqueueFloor(goto) {
@@ -113,7 +112,7 @@ export default {
         //css anim attempt
         this.$refs[
           `car-${this.shaftId}`
-        ].style.transitionDuration = this.distanceToDuration(toFloor);
+        ].style.transition = this.distanceToDuration(toFloor);
         this.currentFloor = toFloor;
         this.determineDirection(this.marginToFloor);
         this.isMoving = true;
@@ -132,9 +131,7 @@ export default {
     },
     distanceToDuration(toFloor) {
       let distance = Math.abs(toFloor - this.marginToFloor) * 1.5;
-      // console.log(`distance # ${distance}`);
-      return `${distance}s`;
-      // return `transition-duration: ${distance}s`;
+      return `margin-top ${distance}s ease-in-out`;
     },
     determineDirection(fromFloor) {
       if (this.currentFloor < fromFloor) {
