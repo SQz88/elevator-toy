@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import app from './App.vue'
 
-const store = require('./store')
+import store from './store'
 
 new Vue({ store, render: h => h(app) }).$mount('#app')

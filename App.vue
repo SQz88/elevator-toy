@@ -20,30 +20,82 @@ export default {
   data() {
     return {
       floors: 11,
-      shafts: ["A", "B", "C", "D"], //, "F", "G"],
+      shafts: ["A"], //, "B", "C", "D", "F", "G"],
       upQueue: new fpQueue(),
       downQueue: new fpQueue((a, b) => {
         return a > b;
       })
     };
   },
-  methods: {},
+  methods: {
+    findBestShaft({ floor, dir }) {
+      let shafts = [];
+      let all = this.$store.getters.getAllShafts;
+      for (let key in all) {
+        shafts.push(Object.assign(all[key], { id: key }));
+      }
+      let direct = shafts.filter(x => x.to == floor && x.dir == dir);
+      if (direct.length > 0) {
+        // console.log("direct route");
+        // console.log(direct[0]);
+        return direct[0].id;
+      }
+      let standingShafts = shafts.filter(x => x.dir == 0);
+      let movingShafts = shafts
+        .filter(x => x.dir == dir)
+        .filter(x => Math.sign(x.floor - floor) != Math.sign(dir));
+      shafts = standingShafts.concat(movingShafts);
+      shafts.forEach(thisShaft => {
+        thisShaft.distance = Math.abs(thisShaft.floor - floor);
+      });
+      shafts.sort((a, b) => a.distance - b.distance);
+
+      // console.log(shafts[0]);
+      if (shafts[0] === undefined) return null;
+      return shafts[0].id;
+    },
+    dispatchShaft(which, where) {
+      console.log(`Dispatch ${which} to floor ${where}`);
+      EventBus.$emit("go", { id: which, floor: where });
+    }
+  },
   beforeDestroy() {
     EventBus.$off();
   },
   created() {
     EventBus.$on("button", ({ floor, dir }) => {
-      if (dir == "up") {
-        this.upQueue.add(floor);
-      } else if (dir == "down") {
-        this.downQueue.add(floor);
+      if (dir == 1) {
+        this.upQueue.add({ floor, dir });
+      } else if (dir == -1) {
+        this.downQueue.add({ floor, dir });
       }
     });
   },
   mounted() {
+    this.$store.commit("initShafts", this.shafts);
+    var self = this;
     setInterval(() => {
       while (!this.upQueue.isEmpty()) {
-        console.log(this.upQueue.poll());
+        // console.log(this.upQueue.poll());
+        if (this.findBestShaft(self.upQueue.peek()) === null) {
+          console.log("No shaft candidate for dir UP", self.upQueue.peek());
+          break;
+        }
+        this.dispatchShaft(
+          this.findBestShaft(self.upQueue.peek()),
+          self.upQueue.poll().floor
+        );
+      }
+      while (!this.downQueue.isEmpty()) {
+        // console.log(this.downQueue.poll());
+        if (this.findBestShaft(self.downQueue.peek()) === null) {
+          console.log("No shaft candidate for dir DOWN", self.downQueue.peek());
+          break;
+        }
+        this.dispatchShaft(
+          this.findBestShaft(self.downQueue.peek()),
+          self.downQueue.poll().floor
+        );
       }
     }, 800);
   }

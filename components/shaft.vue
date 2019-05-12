@@ -1,7 +1,8 @@
 <template lang="pug">
 .shaft
-    .car(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='carStyle')
+    .car(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='carStyle' @click="clicked")
       | {{shaftId}}{{dirArrow}} {{Math.ceil(marginToFloor)}}
+      .queue {{floorQueue.length}}
 </template>
 <script>
 import { EventBus } from "../eventBus";
@@ -29,6 +30,9 @@ export default {
       let currentPx = this.currentMargin;
       let currentFl = this.totalFloors - currentPx / 50;
       return currentFl;
+    },
+    halfFloor() {
+      return Math.round(this.marginToFloor * 2) / 2;
     },
     carStyle() {
       let styleObj = { "margin-top": this.floorToMargin };
@@ -72,12 +76,13 @@ export default {
             self.openDoor = true;
             EventBus.$emit("floor", {
               floor: self.currentFloor,
-              dir: self.movingDirection == 1 ? "up" : "down"
+              dir: self.movingDirection
             });
             clearInterval(interv);
           }
         }, 100);
       } else {
+        this.reportState();
         setTimeout(() => {
           self.openDoor = false;
           self.floorQueue.shift();
@@ -86,12 +91,24 @@ export default {
           } else {
             EventBus.$emit("floor", {
               floor: self.currentFloor,
-              dir: self.movingDirection == 1 ? "down" : "up"
+              dir: -self.movingDirection
             });
             self.movingDirection = 0;
           }
         }, 3500);
       }
+    },
+    movingDirection(_new, _old) {
+      this.reportState();
+      if (_new !== 0 && _old !== 0) {
+        EventBus.$emit("floor", {
+          floor: this.halfFloor,
+          dir: _new
+        });
+      }
+    },
+    halfFloor() {
+      this.reportState();
     }
   },
   methods: {
@@ -99,16 +116,18 @@ export default {
       this.enqueueFloor(Math.floor(Math.random() * (this.totalFloors + 1)));
     },
     enqueueFloor(goto) {
-      this.floorQueue.push(goto);
-      console.log(`Shaft ${this.shaftId} # ${goto} floor added to the queue`);
-      if (this.floorQueue.length == 1) {
-        this.moveCar();
-      }
+      this.floorQueue.unshift(goto);
+      console.log(`Shaft ${this.shaftId} # ${goto} floor added to the queue.`);
+      // console.table(this.floorQueue);
+      // if (this.floorQueue.length == 1) {
+      this.moveCar();
+      // }
     },
     moveCar() {
       let toFloor = this.floorQueue[0];
       if (toFloor <= this.totalFloors) {
-        console.log(`Shaft ${this.shaftId} going to ${toFloor}`);
+        console.log(`Shaft ${this.shaftId} going to ${toFloor}.`);
+        // console.table(this.floorQueue);
         //css anim attempt
         this.$refs[
           `car-${this.shaftId}`
@@ -129,6 +148,14 @@ export default {
         }
       }, 16);*/
     },
+    reportState() {
+      this.$store.commit("shaftState", {
+        id: this.shaftId,
+        floor: this.halfFloor,
+        to: this.currentFloor,
+        dir: this.movingDirection
+      });
+    },
     distanceToDuration(toFloor) {
       let distance = Math.abs(toFloor - this.marginToFloor) * 1.5;
       return `margin-top ${distance}s ease-in-out`;
@@ -145,6 +172,14 @@ export default {
   },
   mounted() {
     this.carStyleObj = getComputedStyle(this.$refs[`car-${this.shaftId}`]);
+    EventBus.$on("go", ({ id, floor }) => {
+      if (id == this.shaftId) {
+        this.enqueueFloor(floor);
+      }
+    });
+  },
+  beforeDestroy() {
+    EventBus.$off();
   }
 };
 </script>
@@ -176,10 +211,17 @@ export default {
   width: 100%;
   border: 1px solid limegreen;
   border-radius: 10px;
-  line-height: 38px;
+  // line-height: 38px;
+  user-select: none;
 }
 .car-anim {
   transition-property: margin-top;
   transition-timing-function: ease-in-out;
+}
+.queue {
+  font-size: 70%;
+  font-weight: normal;
+  white-space: nowrap;
+  // color: black;
 }
 </style>

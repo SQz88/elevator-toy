@@ -3,10 +3,10 @@
     .floor-number
       floor-number(:floorNo="floorNo")
     .floor-buttons(:id="floorNo")
-      button.up(@click="buttonClick" v-if="floorNo != totalFloors" ref="up")
+      button.up(@click="buttonClick" v-if="floorNo != totalFloors" ref="1")
         | &uarr;
       br
-      button.down(@click="buttonClick" v-if="floorNo != 0" ref="down")
+      button.down(@click="buttonClick" v-if="floorNo != 0" ref="-1")
         | &darr;
 </template>
 
@@ -22,14 +22,19 @@ export default {
   methods: {
     buttonClick(e) {
       let floor = e.target.parentElement.id;
-      let dir = e.target.className;
+      let _dir = e.target.className;
+      let dir = 0;
+      if (_dir == "up") {
+        dir = 1;
+      } else if (_dir == "down") {
+        dir = -1;
+      }
       this.$refs[dir].disabled = true;
       EventBus.$emit("button", { floor, dir });
     }
   },
   mounted() {
-    EventBus.$on("floor", payload => {
-      let { floor, dir } = payload;
+    EventBus.$on("floor", ({ floor, dir }) => {
       if (floor == this.floorNo && this.$refs.hasOwnProperty(dir)) {
         this.$refs[dir].disabled = false;
       }
