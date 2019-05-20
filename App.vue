@@ -21,7 +21,9 @@ export default {
     return {
       floors: 11,
       shafts: ["A"], //, "B", "C", "D", "F", "G"],
-      upQueue: new fpQueue(),
+      upQueue: new fpQueue((a, b) => {
+        return a < b;
+      }),
       downQueue: new fpQueue((a, b) => {
         return a > b;
       })
@@ -54,9 +56,9 @@ export default {
       if (shafts[0] === undefined) return null;
       return shafts[0].id;
     },
-    dispatchShaft(which, where) {
-      console.log(`Dispatch ${which} to floor ${where}`);
-      EventBus.$emit("go", { id: which, floor: where });
+    dispatchShaft(id, floor, dir) {
+      console.log(`Dispatch ${id} to floor ${floor} in DIR ${dir}`);
+      EventBus.$emit("go", { id, floor, dir });
     }
   },
   beforeDestroy() {
@@ -75,27 +77,24 @@ export default {
     this.$store.commit("initShafts", this.shafts);
     var self = this;
     setInterval(() => {
-      while (!this.upQueue.isEmpty()) {
-        // console.log(this.upQueue.poll());
-        if (this.findBestShaft(self.upQueue.peek()) === null) {
-          console.log("No shaft candidate for dir UP", self.upQueue.peek());
+      // TODO refactor this shit to be D R Y
+      while (!self.upQueue.isEmpty()) {
+        if (self.findBestShaft(self.upQueue.peek()) !== null) {
+          let { floor, dir } = self.upQueue.poll();
+          self.dispatchShaft(self.findBestShaft({ floor, dir }), floor, dir);
+        } else {
+          // console.log("No shaft candidate for dir UP", self.upQueue.peek());
           break;
         }
-        this.dispatchShaft(
-          this.findBestShaft(self.upQueue.peek()),
-          self.upQueue.poll().floor
-        );
       }
-      while (!this.downQueue.isEmpty()) {
-        // console.log(this.downQueue.poll());
-        if (this.findBestShaft(self.downQueue.peek()) === null) {
-          console.log("No shaft candidate for dir DOWN", self.downQueue.peek());
+      while (!self.downQueue.isEmpty()) {
+        if (self.findBestShaft(self.downQueue.peek()) !== null) {
+          let { floor, dir } = self.downQueue.poll();
+          self.dispatchShaft(self.findBestShaft({ floor, dir }), floor, dir);
+        } else {
+          // console.log("No shaft candidate for dir DOWN", self.downQueue.peek());
           break;
         }
-        this.dispatchShaft(
-          this.findBestShaft(self.downQueue.peek()),
-          self.downQueue.poll().floor
-        );
       }
     }, 800);
   }

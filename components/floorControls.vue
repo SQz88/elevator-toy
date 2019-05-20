@@ -21,8 +21,8 @@ export default {
   },
   methods: {
     buttonClick(e) {
-      let floor = e.target.parentElement.id;
-      let _dir = e.target.className;
+      let floor = parseInt(e.target.parentElement.id);
+      let _dir = parseInt(e.target.className);
       let dir = 0;
       if (_dir == "up") {
         dir = 1;

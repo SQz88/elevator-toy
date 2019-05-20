@@ -2,10 +2,11 @@
 .shaft
     .car(:id="`car-${shaftId}`" :ref="`car-${shaftId}`" :style='carStyle' @click="clicked")
       | {{shaftId}}{{dirArrow}} {{Math.ceil(marginToFloor)}}
-      .queue {{floorQueue.length}}
+      .queue {{floorQueue}}
 </template>
 <script>
 import { EventBus } from "../eventBus";
+const fpQueue = require("fastpriorityqueue");
 
 export default {
   props: ["shaftId", "totalFloors"],
@@ -32,14 +33,13 @@ export default {
       return currentFl;
     },
     halfFloor() {
-      return Math.round(this.marginToFloor * 2) / 2;
+      return Math.round(this.marginToFloor * 4) / 4;
     },
     carStyle() {
       let styleObj = { "margin-top": this.floorToMargin };
-      if (this.isMoving === true) {
+      if (this.isMoving) {
         Object.assign(styleObj, {
           "border-color": "darkred"
-          // "transition-timing-function": "ease-out"
         });
       }
       if (this.openDoor) {
@@ -61,50 +61,44 @@ export default {
     dirArrow() {
       if (this.movingDirection != 0) {
         return this.movingDirection == 1 ? "↑" : "↓";
-      } else return "";
+      } else return this.movingDirection;
     }
   },
   watch: {
-    isMoving(newval, old) {
+    floorQueue(_new, old) {
+      console.warn(old, _new);
+    },
+    isMoving(_new, _old) {
       var self = this;
-      if (newval === true && old === false) {
+      if (_new === true && _old === false) {
         var interv = setInterval(function() {
           // console.log(self.shaftId);
           self.currentTime = Date.now();
           if (self.currentMargin == self.floorToMargin.slice(0, -2)) {
             self.isMoving = false;
             self.openDoor = true;
-            EventBus.$emit("floor", {
-              floor: self.currentFloor,
-              dir: self.movingDirection
-            });
+            self.arriveAtFloor(self.currentFloor, self.movingDirection);
             clearInterval(interv);
           }
         }, 100);
-      } else {
-        this.reportState();
+      } else if (_new === false && _old === true) {
         setTimeout(() => {
           self.openDoor = false;
           self.floorQueue.shift();
           if (self.floorQueue.length > 0) {
             self.moveCar();
           } else {
-            EventBus.$emit("floor", {
-              floor: self.currentFloor,
-              dir: -self.movingDirection
-            });
+            self.arriveAtFloor(self.currentFloor, -self.movingDirection);
             self.movingDirection = 0;
+            self.reportState();
           }
         }, 3500);
       }
     },
     movingDirection(_new, _old) {
-      this.reportState();
       if (_new !== 0 && _old !== 0) {
-        EventBus.$emit("floor", {
-          floor: this.halfFloor,
-          dir: _new
-        });
+        this.arriveAtFloor(this.halfFloor, _new);
+        this.reportState();
       }
     },
     halfFloor() {
@@ -115,45 +109,51 @@ export default {
     clicked() {
       this.enqueueFloor(Math.floor(Math.random() * (this.totalFloors + 1)));
     },
-    enqueueFloor(goto) {
-      this.floorQueue.unshift(goto);
-      console.log(`Shaft ${this.shaftId} # ${goto} floor added to the queue.`);
-      // console.table(this.floorQueue);
-      // if (this.floorQueue.length == 1) {
+    enqueueFloor(floor, dir) {
+      if (this.movingDirection == 0) {
+        this.floorQueue.push(floor);
+        this.movingDirection = dir;
+      } else if (dir == this.movingDirection) {
+        this.floorQueue.unshift(floor);
+        this.floorQueue.sort((a, b) =>
+          this.movingDirection == 1 ? a > b : a < b
+        );
+      } else {
+        console.error(
+          this.shaftId,
+          "received a wrong type of direction to the shaft queue"
+        );
+        return false;
+      }
+      console.log(`Shaft ${this.shaftId} # ${floor} floor added to the queue.`); // console.table(this.floorQueue);
       this.moveCar();
-      // }
     },
     moveCar() {
       let toFloor = this.floorQueue[0];
       if (toFloor <= this.totalFloors) {
-        console.log(`Shaft ${this.shaftId} going to ${toFloor}.`);
-        // console.table(this.floorQueue);
+        console.log(`Shaft ${this.shaftId} going to ${toFloor}.`); // console.table(this.floorQueue);
         //css anim attempt
         this.$refs[
           `car-${this.shaftId}`
         ].style.transition = this.distanceToDuration(toFloor);
         this.currentFloor = toFloor;
-        this.determineDirection(this.marginToFloor);
+        // this.determineDirection(this.marginToFloor);
         this.isMoving = true;
       }
-      // js anim old attempt
-      /*let mv = setInterval(() => {
-        if (Math.abs(this.currentFloor - toFloor) <= 0.11) {
-          this.currentFloor = toFloor;
-          clearInterval(mv);
-        } else if (toFloor > this.currentFloor) {
-          this.currentFloor += 0.05;
-        } else if (toFloor < this.currentFloor) {
-          this.currentFloor -= 0.05;
-        }
-      }, 16);*/
     },
     reportState() {
-      this.$store.commit("shaftState", {
+      let stateObj = {
         id: this.shaftId,
         floor: this.halfFloor,
         to: this.currentFloor,
         dir: this.movingDirection
+      };
+      this.$store.commit("shaftState", stateObj);
+    },
+    arriveAtFloor(floor, dir) {
+      EventBus.$emit("floor", {
+        floor,
+        dir
       });
     },
     distanceToDuration(toFloor) {
@@ -172,9 +172,9 @@ export default {
   },
   mounted() {
     this.carStyleObj = getComputedStyle(this.$refs[`car-${this.shaftId}`]);
-    EventBus.$on("go", ({ id, floor }) => {
+    EventBus.$on("go", ({ id, floor, dir }) => {
       if (id == this.shaftId) {
-        this.enqueueFloor(floor);
+        this.enqueueFloor(floor, dir);
       }
     });
   },
